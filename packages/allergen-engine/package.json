@@ -9,10 +9,13 @@
   "dependencies": {
     "@safesnack/shared-types": "workspace:*"
   },
+  "devDependencies": {
+    "vitest": "^3.0.5"
+  },
   "scripts": {
     "build": "echo ok",
     "lint": "eslint .",
-    "test": "echo ok",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   }
 }
