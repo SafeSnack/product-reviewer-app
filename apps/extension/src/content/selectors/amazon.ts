@@ -60,6 +60,8 @@ export const AMAZON_SELECTORS: {
   ],
 };
 
+export type AmazonSelectors = typeof AMAZON_SELECTORS;
+
 const ASIN_RE = /^[A-Z0-9]{10}$/i;
 
 /**
@@ -101,6 +103,18 @@ function firstNonEmptyQueryAll(
   return null;
 }
 
+/** All product tiles under `root` using the first non-empty selector tier (search pages). */
+export function queryTilesWithFallbacks(
+  root: ParentNode,
+  tileSelectors: readonly string[],
+): Element[] {
+  try {
+    return firstNonEmptyQueryAll(root, tileSelectors)?.elements ?? [];
+  } catch {
+    return [];
+  }
+}
+
 function normalizeAsin(raw: string | null | undefined): string | null {
   if (!raw) {
     return null;
@@ -115,19 +129,25 @@ function normalizeAsin(raw: string | null | undefined): string | null {
 /**
  * Reads ASIN from the tile or the nearest ancestor that exposes `data-asin`.
  */
-export function extractAsin(tile: Element): string | null {
+export function extractAsin(
+  tile: Element,
+  asinAttr: string = AMAZON_SELECTORS.tileAsinAttr,
+): string | null {
   try {
-    const attr = AMAZON_SELECTORS.tileAsinAttr;
-    const host = tile.hasAttribute(attr) ? tile : tile.closest(`[${attr}]`);
-    return normalizeAsin(host?.getAttribute(attr) ?? null);
+    const host = tile.hasAttribute(asinAttr) ? tile : tile.closest(`[${asinAttr}]`);
+    return normalizeAsin(host?.getAttribute(asinAttr) ?? null);
   } catch {
     return null;
   }
 }
 
-function extractTitleFromTile(tile: Element): string | null {
+/** Visible product title inside a search-result tile. */
+export function extractProductTitleFromTile(
+  tile: Element,
+  titleSelectors: readonly string[] = AMAZON_SELECTORS.tileTitle,
+): string | null {
   try {
-    const titleEl = firstMatch(tile, [...AMAZON_SELECTORS.tileTitle]);
+    const titleEl = firstMatch(tile, [...titleSelectors]);
     const text = titleEl?.textContent?.replace(/\s+/g, ' ').trim();
     return text && text.length > 0 ? text : null;
   } catch {
@@ -193,12 +213,12 @@ function findIngredientsHeadingSection(root: ParentNode): string | null {
 
 function extractFromBulletPoints(root: ParentNode): string | null {
   try {
-    const items = firstNonEmptyQueryAll(root, [...AMAZON_SELECTORS.pdpBulletPoints]);
-    if (!items) {
+    const items = queryTilesWithFallbacks(root, [...AMAZON_SELECTORS.pdpBulletPoints]);
+    if (items.length === 0) {
       return null;
     }
     const lines: string[] = [];
-    for (const el of items.elements) {
+    for (const el of items) {
       const t = el.textContent?.replace(/\s+/g, ' ').trim();
       if (!t) {
         continue;
@@ -263,7 +283,7 @@ export function logSelectorCoverage(root: ParentNode = document): void {
       const tilesWithAsin = tileHit.elements.filter((el) => extractAsin(el) !== null);
       const samples = tilesWithAsin.slice(0, 5).map((el) => ({
         asin: extractAsin(el),
-        title: extractTitleFromTile(el),
+        title: extractProductTitleFromTile(el),
       }));
       devLog('search tiles', {
         selectorIndex: tileHit.index,
