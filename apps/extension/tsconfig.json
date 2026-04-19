@@ -2,7 +2,16 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "lib": ["ES2022", "DOM"],
-    "rootDir": "src"
+    "jsx": "react-jsx",
+    "types": ["chrome", "vite/client"]
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/vite-env.d.ts",
+    "manifest.config.ts",
+    "vite.config.ts",
+    "tailwind.config.ts",
+    "vitest.config.ts"
+  ]
 }
