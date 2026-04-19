@@ -194,3 +194,20 @@ export function tokenizeIngredients(raw: string): string[] {
   if (may) out.push(may);
   return out.filter(Boolean);
 }
+
+/**
+ * Full normalize + split main ingredient list vs trailing may-contain / facility clause.
+ */
+export function splitMainAndMayZone(raw: string): {
+  normalized: string;
+  main: string;
+  maySuffix?: string;
+} {
+  const normalized = normalizeIngredientText(raw);
+  if (!normalized) {
+    return { normalized: '', main: '' };
+  }
+  const stripped = stripLabelPrefixes(normalized);
+  const { body, may } = splitMayContainClause(stripped);
+  return { normalized, main: body, maySuffix: may };
+}

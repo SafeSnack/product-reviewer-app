@@ -129,6 +129,7 @@ export const SYNONYMS: readonly SynonymEntry[] = [
       'pistachios',
       'walnut',
       'walnuts',
+      'tree nuts',
       'marzipan',
       'nougat',
       'nut butter',
