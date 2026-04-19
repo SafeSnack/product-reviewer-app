@@ -4,19 +4,35 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        node-version: [20]
+
     steps:
       - uses: actions/checkout@v4
+
       - uses: pnpm/action-setup@v4
         with:
           version: 9
+
       - uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
       - run: pnpm install --frozen-lockfile
+
       - run: pnpm -r typecheck
+
       - run: pnpm -r lint
+
+      - run: pnpm -r test
+
+      - run: pnpm -r build
