@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { AMAZON_SELECTORS, extractAsin, extractIngredientsFromPdp, firstMatch } from './amazon.js';
+import {
+  AMAZON_SELECTORS,
+  extractAsin,
+  extractIngredientsFromPdp,
+  findPdpIngredientsMountPoint,
+  firstMatch,
+} from './amazon.js';
 
 describe('amazon selectors', () => {
   beforeEach(() => {
@@ -65,6 +71,27 @@ describe('amazon selectors', () => {
   it('extractIngredientsFromPdp returns null when nothing matches', () => {
     document.body.innerHTML = '<div id="root">no ingredients here</div>';
     expect(extractIngredientsFromPdp(document.getElementById('root')!)).toBeNull();
+  });
+
+  it('findPdpIngredientsMountPoint matches nic-ingredients block', () => {
+    document.body.innerHTML = `
+      <div id="nic-ingredients_feature_div">
+        <p>Oats, honey, salt.</p>
+      </div>
+    `;
+    const el = findPdpIngredientsMountPoint();
+    expect(el?.id).toBe('nic-ingredients_feature_div');
+  });
+
+  it('findPdpIngredientsMountPoint matches heading fallback body', () => {
+    document.body.innerHTML = `
+      <div class="a-section">
+        <h4>Ingredients</h4>
+        <p>Sugar, cocoa.</p>
+      </div>
+    `;
+    const el = findPdpIngredientsMountPoint();
+    expect(el?.textContent).toContain('Sugar');
   });
 
   it('AMAZON_SELECTORS exposes expected groups', () => {

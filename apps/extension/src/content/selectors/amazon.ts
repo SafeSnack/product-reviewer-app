@@ -262,6 +262,58 @@ export function extractIngredientsFromPdp(root: ParentNode = document): string |
   }
 }
 
+/**
+ * Best-effort DOM node to anchor PDP banner + highlights (mirrors {@link extractIngredientsFromPdp}).
+ */
+export function findPdpIngredientsMountPoint(root: ParentNode = document): Element | null {
+  try {
+    for (const selector of AMAZON_SELECTORS.pdpIngredientsBlocks) {
+      try {
+        const block = root.querySelector(selector);
+        if (block && extractTextFromIngredientsBlock(block)) {
+          return block;
+        }
+      } catch {
+        // continue
+      }
+    }
+
+    const candidates = root.querySelectorAll(
+      '.a-section, .a-row, [data-feature-name="importantInformation"] > *',
+    );
+    for (const sec of Array.from(candidates)) {
+      const headers = sec.querySelectorAll('h2, h3, h4, h5, th, strong, b, .a-text-bold');
+      for (const h of Array.from(headers)) {
+        const label = h.textContent?.trim().toLowerCase();
+        if (!label) {
+          continue;
+        }
+        if (label === 'ingredients' || label.startsWith('ingredients')) {
+          const body = sec.querySelector('p, .a-spacing-small, .a-spacing-base, td') ?? sec;
+          if (extractTextFromIngredientsBlock(body)) {
+            return body;
+          }
+        }
+      }
+    }
+
+    const items = queryTilesWithFallbacks(root, [...AMAZON_SELECTORS.pdpBulletPoints]);
+    for (const el of items) {
+      const t = el.textContent?.replace(/\s+/g, ' ').trim();
+      if (!t || !/ingredient/i.test(t)) {
+        continue;
+      }
+      const host = el.closest('li') ?? el;
+      if (extractTextFromIngredientsBlock(host)) {
+        return host;
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function devLog(message: string, payload?: Record<string, unknown>): void {
   if (!import.meta.env.DEV) {
     return;
