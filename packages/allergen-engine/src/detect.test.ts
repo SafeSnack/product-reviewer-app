@@ -248,4 +248,56 @@ describe('detectAllergens — Task 1.4 matrix', () => {
       source: SRC,
     });
   });
+
+  it('customAvoid: standalone term maps via alias table', () => {
+    expect(
+      detectAllergens({
+        ingredientsText: 'Water, lactose.',
+        source: SRC,
+        targetAllergens: ['milk'],
+        customAvoid: ['lactose'],
+      }),
+    ).toEqual({
+      ingredientsFound: true,
+      ingredientsText: N('Water, lactose.'),
+      allergens: ['milk'],
+      mayContain: [],
+      confidence: 1,
+      source: SRC,
+    });
+  });
+
+  it('may-zone ambiguous lecithin (may-contain clause)', () => {
+    expect(
+      detectAllergens({
+        ingredientsText: 'Sugar. May contain lecithin.',
+        source: SRC,
+        targetAllergens: ['egg'],
+      }),
+    ).toEqual({
+      ingredientsFound: true,
+      ingredientsText: N('Sugar. May contain lecithin.'),
+      allergens: [],
+      mayContain: ['egg'],
+      confidence: 0.6,
+      source: SRC,
+    });
+  });
+
+  it('e322 ambiguous expands like lecithin', () => {
+    expect(
+      detectAllergens({
+        ingredientsText: 'E322.',
+        source: SRC,
+        targetAllergens: ['soy'],
+      }),
+    ).toEqual({
+      ingredientsFound: true,
+      ingredientsText: N('E322.'),
+      allergens: [],
+      mayContain: ['soy'],
+      confidence: 0.4,
+      source: SRC,
+    });
+  });
 });

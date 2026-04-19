@@ -16,7 +16,7 @@
   "scripts": {
     "build": "echo ok",
     "lint": "eslint .",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   }
