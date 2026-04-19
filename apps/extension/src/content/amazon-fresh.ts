@@ -1,10 +1,9 @@
 import type { AllergenKey, BadgeState, DetectionResult } from '@safesnack/shared-types';
-import { ALLERGEN_LABELS } from '@safesnack/shared-types';
 import { sendMessage } from '../core/messaging.js';
 import type { LookupResponse } from '../core/messaging.js';
 import { getSettings } from '../core/storage.js';
 import { mountBadge, updateBadge } from './badge.js';
-import { buildHighlightPhrases, mountPdpUi } from './highlighter.js';
+import { mountPdpUi } from './highlighter.js';
 import { startTileObserver } from './observer.js';
 import {
   AMAZON_SELECTORS,
@@ -50,33 +49,6 @@ function isProfileActive(settings: {
   customAvoid: readonly string[];
 }): boolean {
   return settings.allergens.length > 0 || settings.customAvoid.length > 0;
-}
-
-function formatAllergenLabels(keys: readonly AllergenKey[]): string {
-  return keys.map((k) => ALLERGEN_LABELS[k]).join(', ');
-}
-
-function buildPdpBannerLines(r: DetectionResult): string[] {
-  const lines: string[] = [];
-  if (r.allergens.length > 0) {
-    lines.push(`Unsafe for your profile — contains: ${formatAllergenLabels(r.allergens)}`);
-  }
-  if (r.mayContain.length > 0) {
-    lines.push(`May contain: ${formatAllergenLabels(r.mayContain)}`);
-  }
-  if (
-    r.allergens.length === 0 &&
-    r.mayContain.length === 0 &&
-    r.ingredientsFound &&
-    r.confidence >= 0.5
-  ) {
-    lines.push('No flagged allergens detected in this ingredient list for your profile.');
-  }
-  if (!r.ingredientsFound || r.confidence < 0.5) {
-    lines.push('Ingredient information is limited or unclear for automated checks.');
-  }
-  lines.push('Always verify packaging. Ingredient data may be outdated.');
-  return lines;
 }
 
 function detectionToBadgeState(result: DetectionResult | null | undefined): BadgeState {
@@ -199,14 +171,10 @@ async function startPdpFlow(): Promise<void> {
     if (!container) {
       return;
     }
-    const lines = buildPdpBannerLines(res.result);
-    const keys = new Set<AllergenKey>([...res.result.allergens, ...res.result.mayContain]);
-    const phrases = buildHighlightPhrases(keys);
     const disposeUi = mountPdpUi({
       insertBefore: container,
       highlightRoot: container,
-      bannerLines: lines,
-      phrases,
+      detection: res.result,
     });
     pageDisposers.push(disposeUi);
   } catch {
