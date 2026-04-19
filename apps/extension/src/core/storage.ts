@@ -1,7 +1,7 @@
 import type { AllergenKey, CachedIngredient, LocalSettings } from '@safesnack/shared-types';
 import { ALL_ALLERGENS, DEFAULT_SETTINGS } from '@safesnack/shared-types';
 
-const SETTINGS_KEY = 'localSettings' as const;
+export const LOCAL_SETTINGS_STORAGE_KEY = 'localSettings' as const;
 const CACHE_KEY = 'ingredientCache' as const;
 
 /** Default cache entry lifetime when `ttl` is missing or invalid (30 days). */
@@ -107,8 +107,8 @@ export async function getSettings(): Promise<LocalSettings> {
     return mergeLocalSettings(null);
   }
   try {
-    const stored = await chrome.storage.sync.get(SETTINGS_KEY);
-    return mergeLocalSettings(stored[SETTINGS_KEY]);
+    const stored = await chrome.storage.sync.get(LOCAL_SETTINGS_STORAGE_KEY);
+    return mergeLocalSettings(stored[LOCAL_SETTINGS_STORAGE_KEY]);
   } catch {
     return mergeLocalSettings(null);
   }
@@ -129,7 +129,7 @@ export async function saveSettings(s: Partial<LocalSettings>): Promise<void> {
         ...(patchUi ? omitUndefined(patchUi as Record<string, unknown>) : {}),
       },
     };
-    await chrome.storage.sync.set({ [SETTINGS_KEY]: next });
+    await chrome.storage.sync.set({ [LOCAL_SETTINGS_STORAGE_KEY]: next });
   } catch {
     // ignore
   }
@@ -143,10 +143,10 @@ export function subscribeToSettings(cb: (s: LocalSettings) => void): () => void 
     changes: Record<string, chrome.storage.StorageChange>,
     areaName: chrome.storage.AreaName,
   ) => {
-    if (areaName !== 'sync' || !changes[SETTINGS_KEY]) {
+    if (areaName !== 'sync' || !changes[LOCAL_SETTINGS_STORAGE_KEY]) {
       return;
     }
-    const change = changes[SETTINGS_KEY];
+    const change = changes[LOCAL_SETTINGS_STORAGE_KEY];
     cb(mergeLocalSettings(change.newValue));
   };
   chrome.storage.onChanged.addListener(listener);

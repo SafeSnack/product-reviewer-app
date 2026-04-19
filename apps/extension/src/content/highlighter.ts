@@ -223,7 +223,7 @@ function collectHighlightableTextNodes(root: Node, out: Text[]): void {
   if (el.hasAttribute(HL_HOST_ATTR)) {
     return;
   }
-  for (const child of el.childNodes) {
+  for (const child of Array.from(el.childNodes)) {
     collectHighlightableTextNodes(child, out);
   }
 }

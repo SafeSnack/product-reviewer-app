@@ -26,7 +26,7 @@ export default defineManifest({
       run_at: 'document_idle',
     },
   ],
-  permissions: ['storage', 'activeTab'],
+  permissions: ['storage', 'activeTab', 'tabs', 'alarms'],
   host_permissions: ['https://world.openfoodfacts.org/*', 'https://api.nal.usda.gov/*'],
   web_accessible_resources: [
     {

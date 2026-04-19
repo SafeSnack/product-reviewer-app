@@ -230,7 +230,28 @@ function kickoff(): void {
   void bootstrapAmazonFresh();
 }
 
+function installSettingsBroadcastListener(): void {
+  if (typeof chrome === 'undefined' || !chrome.runtime?.onMessage) {
+    return;
+  }
+  chrome.runtime.onMessage.addListener((message: unknown) => {
+    if (!message || typeof message !== 'object') {
+      return;
+    }
+    const t = (message as { type?: unknown }).type;
+    if (t !== 'SETTINGS_CHANGED') {
+      return;
+    }
+    try {
+      void bootstrapAmazonFresh();
+    } catch {
+      // ignore
+    }
+  });
+}
+
 if (import.meta.env.MODE !== 'test') {
+  installSettingsBroadcastListener();
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', kickoff, { once: true });
   } else {
