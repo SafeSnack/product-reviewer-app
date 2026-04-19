@@ -1,0 +1,15 @@
+{
+  "name": "@safesnack/shared-types",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "echo ok",
+    "lint": "eslint .",
+    "test": "echo ok",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

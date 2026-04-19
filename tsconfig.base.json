@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "@safesnack/allergen-engine": ["packages/allergen-engine/src/index.ts"],
+      "@safesnack/shared-types": ["packages/shared-types/src/index.ts"]
+    }
+  }
+}
