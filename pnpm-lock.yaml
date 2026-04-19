@@ -54,7 +54,11 @@ importers:
         specifier: ^18.3.5
         version: 18.3.7(@types/react@18.3.28)
 
-  packages/allergen-engine: {}
+  packages/allergen-engine:
+    dependencies:
+      '@safesnack/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
 
   packages/shared-types: {}
 
