@@ -1,11 +1,22 @@
 /**
  * Open Food Facts client — network isolated to services (not content / allergen-engine).
- * @see SAFESNACK_IMPLEMENTATION_PLAN.md Task 4.1
+ * @see https://openfoodfacts.github.io/openfoodfacts-server/api/
  */
+
+import {
+  isOpenFoodFactsBarcodeMissCached,
+  isOpenFoodFactsNameMissCached,
+  setOpenFoodFactsBarcodeMiss,
+  setOpenFoodFactsNameMiss,
+} from '../core/storage.js';
 
 const OFF_SEARCH = 'https://world.openfoodfacts.org/cgi/search.pl';
 const OFF_USER_AGENT = 'SafeSnack/0.1 (contact: hello@safesnack.co)';
 const LOOKUP_TIMEOUT_MS = 5000;
+const RATE_MAX = 10;
+const RATE_WINDOW_MS = 60_000;
+
+const rateTimestamps: number[] = [];
 
 export type OffProduct = {
   id: string;
@@ -15,6 +26,32 @@ export type OffProduct = {
   allergensTags?: string[];
   tracesTags?: string[];
 };
+
+/** Vitest-only: reset sliding rate window. */
+export function resetOpenFoodFactsRateLimitForTests(): void {
+  if (!import.meta.env.VITEST) {
+    return;
+  }
+  rateTimestamps.length = 0;
+}
+
+async function acquireOffRateSlot(): Promise<void> {
+  for (;;) {
+    const now = Date.now();
+    while (rateTimestamps.length > 0 && now - rateTimestamps[0]! >= RATE_WINDOW_MS) {
+      rateTimestamps.shift();
+    }
+    if (rateTimestamps.length < RATE_MAX) {
+      rateTimestamps.push(now);
+      return;
+    }
+    const oldest = rateTimestamps[0]!;
+    const wait = RATE_WINDOW_MS - (now - oldest) + 5;
+    await new Promise<void>((resolve) => {
+      globalThis.setTimeout(resolve, Math.min(2000, Math.max(15, wait)));
+    });
+  }
+}
 
 function parseFirstProduct(data: unknown): OffProduct | null {
   if (!data || typeof data !== 'object') {
@@ -55,14 +92,62 @@ function parseFirstProduct(data: unknown): OffProduct | null {
   };
 }
 
+/** v0 single-product JSON → OffProduct */
+function parseV0SingleProduct(data: unknown): OffProduct | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+  const product = (data as { product?: unknown }).product;
+  if (!product || typeof product !== 'object') {
+    return null;
+  }
+  return parseFirstProduct({ products: [product as Record<string, unknown>] });
+}
+
+/** Try v2-style or generic object with nested `product`. */
+function parseProductResponse(data: unknown): OffProduct | null {
+  const fromNested = parseV0SingleProduct(data);
+  if (fromNested) {
+    return fromNested;
+  }
+  if (data && typeof data === 'object') {
+    const d = data as Record<string, unknown>;
+    if (typeof d.code === 'string' || typeof d.product_name === 'string') {
+      return parseFirstProduct({ products: [d] });
+    }
+  }
+  return null;
+}
+
+async function fetchOffJson(url: string, signal: AbortSignal): Promise<unknown> {
+  const res = await fetch(url, {
+    signal,
+    headers: {
+      'User-Agent': OFF_USER_AGENT,
+      Accept: 'application/json',
+    },
+  });
+  if (!res.ok) {
+    throw new Error('off_http');
+  }
+  return await res.json();
+}
+
 /**
  * Search OFF by product name (Amazon tiles rarely expose barcodes).
+ * Uses search.pl; rate-limited; 24h negative cache on definitive miss.
  */
 export async function lookupByName(productName: string): Promise<OffProduct | null> {
   const q = productName.trim();
   if (!q) {
     return null;
   }
+  if (await isOpenFoodFactsNameMissCached(q)) {
+    return null;
+  }
+
+  await acquireOffRateSlot();
+
   const url = new URL(OFF_SEARCH);
   url.searchParams.set('search_terms', q.slice(0, 200));
   url.searchParams.set('search_simple', '1');
@@ -76,19 +161,16 @@ export async function lookupByName(productName: string): Promise<OffProduct | nu
   const ac = new AbortController();
   const timer = globalThis.setTimeout(() => ac.abort(), LOOKUP_TIMEOUT_MS);
   try {
-    const res = await fetch(url.toString(), {
-      signal: ac.signal,
-      headers: {
-        'User-Agent': OFF_USER_AGENT,
-        Accept: 'application/json',
-      },
-    });
-    if (!res.ok) {
+    const data = await fetchOffJson(url.toString(), ac.signal);
+    const parsed = parseFirstProduct(data);
+    if (!parsed) {
+      await setOpenFoodFactsNameMiss(q);
+    }
+    return parsed;
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
       return null;
     }
-    const data: unknown = await res.json();
-    return parseFirstProduct(data);
-  } catch {
     return null;
   } finally {
     globalThis.clearTimeout(timer);
@@ -96,34 +178,54 @@ export async function lookupByName(productName: string): Promise<OffProduct | nu
 }
 
 /**
- * Barcode PDP / future flows (stub until wired to UI).
+ * Barcode lookup (v2 endpoint first, then v0 fallback) — same rate limit / negative cache rules.
  */
-export async function lookupProductByBarcode(barcode: string): Promise<OffProduct | null> {
+export async function lookupByBarcode(barcode: string): Promise<OffProduct | null> {
   const code = barcode.trim();
   if (!code) {
     return null;
   }
-  const url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`;
+  if (await isOpenFoodFactsBarcodeMissCached(code)) {
+    return null;
+  }
+
+  await acquireOffRateSlot();
+
+  const v2Url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}`;
+  const v0Url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`;
+
   const ac = new AbortController();
   const timer = globalThis.setTimeout(() => ac.abort(), LOOKUP_TIMEOUT_MS);
   try {
-    const res = await fetch(url, {
-      signal: ac.signal,
-      headers: {
-        'User-Agent': OFF_USER_AGENT,
-        Accept: 'application/json',
-      },
-    });
-    if (!res.ok) {
+    let parsed: OffProduct | null = null;
+    try {
+      const dataV2 = await fetchOffJson(v2Url, ac.signal);
+      parsed = parseProductResponse(dataV2);
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        throw e;
+      }
+      parsed = null;
+    }
+    if (!parsed) {
+      try {
+        const dataV0 = await fetchOffJson(v0Url, ac.signal);
+        parsed = parseV0SingleProduct(dataV0);
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          throw e;
+        }
+        parsed = null;
+      }
+    }
+    if (!parsed) {
+      await setOpenFoodFactsBarcodeMiss(code);
+    }
+    return parsed;
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
       return null;
     }
-    const data = (await res.json()) as { product?: Record<string, unknown> };
-    const p = data.product;
-    if (!p || typeof p !== 'object') {
-      return null;
-    }
-    return parseFirstProduct({ products: [p] });
-  } catch {
     return null;
   } finally {
     globalThis.clearTimeout(timer);

@@ -203,8 +203,110 @@ export async function clearExpiredCache(): Promise<number> {
     if (removed > 0) {
       await writeCacheMap(next);
     }
+    removed += await pruneExpiredOpenFoodFactsMisses(now);
     return removed;
   } catch {
     return 0;
   }
+}
+
+const OFF_MISS_KEY = 'openFoodFactsMiss' as const;
+/** Negative OFF lookups (name/barcode → no usable product) TTL. */
+const OFF_MISS_TTL_MS = 24 * 60 * 60 * 1000;
+
+type OffMissMap = Record<string, number>;
+
+function normalizeOffNameKey(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+async function readOffMissMap(): Promise<OffMissMap> {
+  if (!hasChromeLocal()) {
+    return {};
+  }
+  try {
+    const result = await chrome.storage.local.get(OFF_MISS_KEY);
+    const raw = result[OFF_MISS_KEY];
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      return raw as OffMissMap;
+    }
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+async function writeOffMissMap(map: OffMissMap): Promise<void> {
+  if (!hasChromeLocal()) {
+    return;
+  }
+  try {
+    await chrome.storage.local.set({ [OFF_MISS_KEY]: map });
+  } catch {
+    // ignore
+  }
+}
+
+function offMissKeyForName(productName: string): string {
+  return `name:${normalizeOffNameKey(productName)}`;
+}
+
+function offMissKeyForBarcode(barcode: string): string {
+  return `barcode:${barcode.trim().toUpperCase()}`;
+}
+
+/** True when this name was recorded as OFF miss and TTL not expired. */
+export async function isOpenFoodFactsNameMissCached(productName: string): Promise<boolean> {
+  const map = await readOffMissMap();
+  const exp = map[offMissKeyForName(productName)];
+  return typeof exp === 'number' && Date.now() < exp;
+}
+
+export async function setOpenFoodFactsNameMiss(productName: string): Promise<void> {
+  const map = await readOffMissMap();
+  const now = Date.now();
+  const next: OffMissMap = {};
+  for (const [k, exp] of Object.entries(map)) {
+    if (typeof exp === 'number' && exp > now) {
+      next[k] = exp;
+    }
+  }
+  next[offMissKeyForName(productName)] = now + OFF_MISS_TTL_MS;
+  await writeOffMissMap(next);
+}
+
+export async function isOpenFoodFactsBarcodeMissCached(barcode: string): Promise<boolean> {
+  const map = await readOffMissMap();
+  const exp = map[offMissKeyForBarcode(barcode)];
+  return typeof exp === 'number' && Date.now() < exp;
+}
+
+export async function setOpenFoodFactsBarcodeMiss(barcode: string): Promise<void> {
+  const map = await readOffMissMap();
+  const now = Date.now();
+  const next: OffMissMap = {};
+  for (const [k, exp] of Object.entries(map)) {
+    if (typeof exp === 'number' && exp > now) {
+      next[k] = exp;
+    }
+  }
+  next[offMissKeyForBarcode(barcode)] = now + OFF_MISS_TTL_MS;
+  await writeOffMissMap(next);
+}
+
+async function pruneExpiredOpenFoodFactsMisses(now: number): Promise<number> {
+  const map = await readOffMissMap();
+  let pruned = 0;
+  const next: OffMissMap = {};
+  for (const [k, exp] of Object.entries(map)) {
+    if (typeof exp === 'number' && exp > now) {
+      next[k] = exp;
+    } else {
+      pruned += 1;
+    }
+  }
+  if (pruned > 0) {
+    await writeOffMissMap(next);
+  }
+  return pruned;
 }
