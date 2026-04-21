@@ -3,6 +3,7 @@ import { sendMessage } from '../core/messaging.js';
 import type { LookupResponse } from '../core/messaging.js';
 import { getSettings } from '../core/storage.js';
 import { mountBadge, updateBadge } from './badge.js';
+import { openHelpSubmitModal, shouldOfferIngredientHelp } from './helpSubmitModal.js';
 import { mountPdpUi } from './highlighter.js';
 import { startTileObserver } from './observer.js';
 import {
@@ -109,7 +110,30 @@ function startSearchFlow(): void {
     onTile(tile, asin, title) {
       try {
         const productKey = `amazon:${asin}`;
-        mountBadge(tile, { state: 'unknown', allergens: [], mayContain: [] });
+        const openUnknownHelp = (): void => {
+          openHelpSubmitModal({
+            productKey,
+            productName: title,
+            onAfterQueue: async (detection) => {
+              if (!tile.isConnected) {
+                return;
+              }
+              const state = detectionToBadgeState(detection);
+              updateBadge(tile, {
+                state,
+                allergens: detection.allergens,
+                mayContain: detection.mayContain,
+                onSubmitUnknown: state === 'unknown' ? openUnknownHelp : undefined,
+              });
+            },
+          });
+        };
+        mountBadge(tile, {
+          state: 'unknown',
+          allergens: [],
+          mayContain: [],
+          onSubmitUnknown: openUnknownHelp,
+        });
         void (async () => {
           try {
             const res = await sendMessage<LookupResponse>({
@@ -129,10 +153,16 @@ function startSearchFlow(): void {
               state,
               allergens: res.result?.allergens ?? [],
               mayContain: res.result?.mayContain ?? [],
+              onSubmitUnknown: state === 'unknown' ? openUnknownHelp : undefined,
             });
           } catch {
             try {
-              updateBadge(tile, { state: 'unknown', allergens: [], mayContain: [] });
+              updateBadge(tile, {
+                state: 'unknown',
+                allergens: [],
+                mayContain: [],
+                onSubmitUnknown: openUnknownHelp,
+              });
             } catch {
               // ignore
             }
@@ -164,17 +194,33 @@ async function startPdpFlow(): Promise<void> {
       productName: title,
       ingredientsFromDom: ingredients,
     });
-    if (res.type !== 'LOOKUP_RESULT' || !res.result) {
-      return;
-    }
+    const detection: DetectionResult =
+      res.type === 'LOOKUP_RESULT' && res.result
+        ? res.result
+        : {
+            ingredientsFound: Boolean(ingredients?.trim()),
+            ingredientsText: ingredients ?? null,
+            allergens: [],
+            mayContain: [],
+            confidence: 0,
+            source: 'amazon_dom',
+          };
+
     const container = findPdpIngredientsMountPoint();
     if (!container) {
       return;
     }
+    const offerHelp = shouldOfferIngredientHelp(detection);
     const disposeUi = mountPdpUi({
       insertBefore: container,
       highlightRoot: container,
-      detection: res.result,
+      detection,
+      helpSubmit: offerHelp ? { productKey, productName: title } : undefined,
+      onAfterHelpSubmit: offerHelp
+        ? async () => {
+            await startPdpFlow();
+          }
+        : undefined,
     });
     pageDisposers.push(disposeUi);
   } catch {

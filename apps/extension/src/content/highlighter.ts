@@ -1,6 +1,7 @@
 import type { AllergenKey, DetectionResult } from '@safesnack/shared-types';
 import { ALLERGEN_LABELS } from '@safesnack/shared-types';
 import { SYNONYMS } from '@safesnack/allergen-engine/synonyms';
+import { openHelpSubmitModal, shouldOfferIngredientHelp } from './helpSubmitModal.js';
 
 const BANNER_ATTR = 'data-safesnack-pdp-banner';
 const HL_HOST_ATTR = 'data-safesnack-hl';
@@ -268,6 +269,8 @@ export function mountPdpUi(opts: {
   insertBefore: Element;
   highlightRoot: Element;
   detection: DetectionResult;
+  helpSubmit?: { productKey: string; productName: string };
+  onAfterHelpSubmit?: () => void | Promise<void>;
 }): () => void {
   const bannerLines = buildPdpBannerLines(opts.detection);
   const keys = new Set<AllergenKey>([...opts.detection.allergens, ...opts.detection.mayContain]);
@@ -294,6 +297,32 @@ export function mountPdpUi(opts: {
     p.style.margin = '0 0 6px 0';
     p.appendChild(document.createTextNode(line));
     banner.appendChild(p);
+  }
+
+  if (opts.helpSubmit && opts.onAfterHelpSubmit && shouldOfferIngredientHelp(opts.detection)) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.style.cssText = [
+      'margin-top:10px',
+      'padding:8px 12px',
+      'border-radius:6px',
+      'border:1px solid #d1d5db',
+      'background:#fff',
+      'cursor:pointer',
+      'font:inherit',
+      'color:#1d4ed8',
+    ].join(';');
+    btn.appendChild(document.createTextNode('Help us — submit ingredients'));
+    btn.addEventListener('click', () => {
+      openHelpSubmitModal({
+        productKey: opts.helpSubmit!.productKey,
+        productName: opts.helpSubmit!.productName,
+        onAfterQueue: async () => {
+          await opts.onAfterHelpSubmit?.();
+        },
+      });
+    });
+    banner.appendChild(btn);
   }
 
   const parent = opts.insertBefore.parentNode;
