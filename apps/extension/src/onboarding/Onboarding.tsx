@@ -14,6 +14,8 @@ import { trackEvent } from '../services/analytics.js';
 
 const AMZ_FRESH_URL = 'https://www.amazon.com/alm/storefront?almBrandId=QW1hem9uIEZyZXNo' as const;
 const LANDING_URL = 'https://safesnack.co' as const;
+const PRIVACY_URL = 'https://safesnack.co/privacy' as const;
+const TERMS_URL = 'https://safesnack.co/terms' as const;
 
 const ALLERGEN_ACCENT: Record<AllergenKey, string> = {
   milk: 'text-sky-700',
@@ -290,6 +292,27 @@ export function Onboarding() {
           Always verify packaging. Ingredient data can be incomplete or change; SafeSnack is a
           helper, not medical advice.
         </p>
+        <nav
+          className="mx-auto mt-3 flex max-w-lg flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs font-semibold"
+          aria-label="Legal links"
+        >
+          <a
+            href={PRIVACY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-800 underline decoration-emerald-700/40 underline-offset-2 transition-colors duration-150 hover:text-emerald-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 motion-reduce:transition-none"
+          >
+            Privacy
+          </a>
+          <a
+            href={TERMS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-emerald-800 underline decoration-emerald-700/40 underline-offset-2 transition-colors duration-150 hover:text-emerald-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 motion-reduce:transition-none"
+          >
+            Terms
+          </a>
+        </nav>
       </footer>
     </div>
   );

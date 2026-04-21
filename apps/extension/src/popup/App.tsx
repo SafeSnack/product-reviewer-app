@@ -6,6 +6,7 @@ import { usePopupStore } from './store.js';
 const FEEDBACK_MAILTO =
   'mailto:hello@safesnack.co?subject=' + encodeURIComponent('SafeSnack feedback');
 const PRIVACY_URL = 'https://safesnack.co/privacy' as const;
+const TERMS_URL = 'https://safesnack.co/terms' as const;
 
 function extensionVersion(): string {
   try {
@@ -228,6 +229,14 @@ export function App() {
             rel="noopener noreferrer"
           >
             Privacy
+          </a>
+          <a
+            className="text-emerald-800 underline decoration-emerald-700/40 underline-offset-2 transition-colors duration-150 hover:text-emerald-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 motion-reduce:transition-none"
+            href={TERMS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Terms
           </a>
           {rateUrl ? (
             <a
