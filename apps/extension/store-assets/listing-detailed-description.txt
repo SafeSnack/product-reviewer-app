@@ -1,0 +1,19 @@
+PART 1 — THE PROBLEM
+
+Shopping Amazon Fresh with food allergies or strict avoid-lists means re-reading ingredient language on item after item. Small wording differences matter, and on-page data is not always complete. SafeSnack is built to reduce that friction in the browser: you choose what you need to flag once, then get consistent, glanceable signals while you browse.
+
+PART 2 — HOW IT WORKS
+
+After install, onboarding walks you through selecting allergens you want flagged (FDA Big 9 plus sesame and mustard, as implemented in the extension). On supported Amazon Fresh views, SafeSnack adds compact badges on product tiles so you can see Safe, flagged (when matches exceed the tool’s confidence rules), or Unknown at a glance. On product detail pages, ingredient-style text can be emphasized where the extension finds relevant terms, so you can jump to the risky lines faster.
+
+Settings live in Chrome sync storage for the extension; there is no account required for the MVP flow described here. When on-page text is missing or confidence is low, SafeSnack stays in an Unknown-style path rather than guessing “safe.” You can also use the “Help us — ingredients” flow to paste text from packaging to improve a single item locally; that does not replace reading the label yourself.
+
+PART 3 — TRUST, PRIVACY, AND DISCLAIMER
+
+SafeSnack reads on-page content that is already visible in your tab to analyze ingredients against your profile. It is a shopping helper, not a medical device, not a doctor, and not a substitute for reading official packaging, contacting manufacturers, or following your care team’s guidance. Online listings can lag real packaging; errors and omissions happen; cross-contact language varies by brand.
+
+We bias toward uncertainty when data is weak because a missed allergen is unacceptable for users who rely on this tool. “May contain” / shared-facility style language is treated distinctly from direct contains language where the product surfaces it.
+
+No feature here diagnoses, treats, or cures any condition. Nothing in the extension guarantees that a food is safe for you or your family.
+
+Always verify packaging before you buy or consume.
