@@ -87,6 +87,22 @@ describe('badge', () => {
     expect(tip.textContent).toContain('Always verify packaging');
   });
 
+  it('unknown + may-contain uses cautious copy and aria (no green safe)', () => {
+    const tile = document.createElement('div');
+    document.body.appendChild(tile);
+    mountBadge(tile, {
+      state: 'unknown',
+      allergens: [],
+      mayContain: ['peanut'],
+    });
+    const badge = getShadowBadge(tile)!;
+    expect(badge.getAttribute('aria-label')).toContain('may contain');
+    const tip = getTooltip(tile)!;
+    expect(tip.textContent).toContain('May contain (your profile): Peanut');
+    expect(tip.textContent).toContain('Not shown as green safe');
+    expect(tip.querySelector('button.link')).toBeNull();
+  });
+
   it('unknown tooltip shows copy and submit control when handler provided', () => {
     const tile = document.createElement('div');
     document.body.appendChild(tile);

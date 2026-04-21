@@ -44,6 +44,20 @@ describe('buildPdpBannerLines', () => {
       true,
     );
   });
+
+  it('does not claim all-clear when only may-contain matches profile', () => {
+    const r: DetectionResult = {
+      ingredientsFound: true,
+      ingredientsText: 'sugar. may contain peanuts.',
+      allergens: [],
+      mayContain: ['peanut'],
+      confidence: 0.6,
+      source: 'amazon_dom',
+    };
+    const lines = buildPdpBannerLines(r);
+    expect(lines.some((l) => l.includes('No flagged allergens detected'))).toBe(false);
+    expect(lines.some((l) => l.startsWith('🟡') && l.includes('Peanut'))).toBe(true);
+  });
 });
 
 describe('findBestWordBoundaryMatch', () => {

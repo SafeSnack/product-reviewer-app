@@ -1,4 +1,5 @@
-import type { AllergenKey, BadgeState, DetectionResult } from '@safesnack/shared-types';
+import { badgeStateFromDetection } from '@safesnack/allergen-engine';
+import type { AllergenKey, DetectionResult } from '@safesnack/shared-types';
 import { sendMessage } from '../core/messaging.js';
 import type { LookupResponse } from '../core/messaging.js';
 import { getSettings } from '../core/storage.js';
@@ -51,19 +52,6 @@ function isProfileActive(settings: {
   customAvoid: readonly string[];
 }): boolean {
   return settings.allergens.length > 0 || settings.customAvoid.length > 0;
-}
-
-function detectionToBadgeState(result: DetectionResult | null | undefined): BadgeState {
-  if (!result || !result.ingredientsFound) {
-    return 'unknown';
-  }
-  if (result.confidence < 0.5) {
-    return 'unknown';
-  }
-  if (result.allergens.length > 0) {
-    return 'unsafe';
-  }
-  return 'safe';
 }
 
 function clearPageResources(): void {
@@ -119,7 +107,7 @@ function startSearchFlow(): void {
               if (!tile.isConnected) {
                 return;
               }
-              const state = detectionToBadgeState(detection);
+              const state = badgeStateFromDetection(detection);
               updateBadge(tile, {
                 state,
                 allergens: detection.allergens,
@@ -149,7 +137,7 @@ function startSearchFlow(): void {
             ) {
               return;
             }
-            const state = detectionToBadgeState(res.result ?? undefined);
+            const state = badgeStateFromDetection(res.result ?? undefined);
             updateBadge(tile, {
               state,
               allergens: res.result?.allergens ?? [],

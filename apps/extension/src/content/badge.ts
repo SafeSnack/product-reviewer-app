@@ -135,7 +135,10 @@ function formatAllergenList(keys: readonly AllergenKey[]): string {
   return keys.map((k) => ALLERGEN_LABELS[k]).join(', ');
 }
 
-function ariaLabelForState(state: BadgeState): string {
+function ariaLabelForState(state: BadgeState, mayContain: readonly AllergenKey[]): string {
+  if (state === 'unknown' && mayContain.length > 0) {
+    return 'SafeSnack: may contain flagged allergens for your profile — verify packaging';
+  }
   switch (state) {
     case 'safe':
       return 'SafeSnack: no flagged allergens detected';
@@ -203,6 +206,17 @@ function buildTooltipContent(props: BadgeProps, tooltipId: string): HTMLElement 
     return panel;
   }
 
+  if (props.mayContain.length > 0) {
+    pMain.appendChild(
+      document.createTextNode(
+        `May contain (your profile): ${formatAllergenList(props.mayContain)}. Not shown as green safe — verify packaging.`,
+      ),
+    );
+    panel.appendChild(pMain);
+    panel.appendChild(pDisclaimer);
+    return panel;
+  }
+
   pMain.appendChild(document.createTextNode('No ingredient info found'));
   panel.appendChild(pMain);
   panel.appendChild(pDisclaimer);
@@ -236,7 +250,7 @@ function renderShadow(shadow: ShadowRoot, props: BadgeProps): void {
   badge.tabIndex = 0;
   badge.style.backgroundColor = COLORS[props.state];
   badge.setAttribute('role', 'img');
-  badge.setAttribute('aria-label', ariaLabelForState(props.state));
+  badge.setAttribute('aria-label', ariaLabelForState(props.state, props.mayContain));
   badge.setAttribute('aria-describedby', tooltipId);
   badge.appendChild(document.createTextNode(iconGlyph(props.state)));
 

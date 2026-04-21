@@ -3,6 +3,7 @@
  * v2 (opt-in + PostHog URL in env): remote capture stubbed here — no `fetch` in MVP paths.
  */
 
+import { badgeStateFromDetection } from '@safesnack/allergen-engine';
 import type { DetectionResult } from '@safesnack/shared-types';
 import type { LookupResponse } from '../core/messaging.js';
 import { getSettings } from '../core/storage.js';
@@ -73,16 +74,7 @@ export function mergeScansTodayBucket(
 export function productScanStateFromResult(
   result: DetectionResult | null | undefined,
 ): ProductScanState {
-  if (!result || !result.ingredientsFound) {
-    return 'unknown';
-  }
-  if (result.confidence < 0.5) {
-    return 'unknown';
-  }
-  if (result.allergens.length > 0) {
-    return 'unsafe';
-  }
-  return 'safe';
+  return badgeStateFromDetection(result);
 }
 
 export function productScanStateFromLookupResponse(res: LookupResponse): ProductScanState {

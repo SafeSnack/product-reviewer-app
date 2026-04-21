@@ -60,6 +60,16 @@ describe('analytics', () => {
       source: 'amazon_dom',
     };
     expect(productScanStateFromResult(safe)).toBe('safe');
+
+    const mayOnly: DetectionResult = {
+      ingredientsFound: true,
+      ingredientsText: 'sugar. may contain peanuts.',
+      allergens: [],
+      mayContain: ['peanut'],
+      confidence: 0.6,
+      source: 'amazon_dom',
+    };
+    expect(productScanStateFromResult(mayOnly)).toBe('unknown');
   });
 
   it('trackEvent updates session counters for product_scanned and submission_created', async () => {
