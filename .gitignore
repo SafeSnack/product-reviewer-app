@@ -38,6 +38,7 @@ dist/
 .env.*
 !.env.example
 !apps/web/.env.example
+!apps/extension/.env.example
 *.log
 coverage/
 pnpm-debug.log*

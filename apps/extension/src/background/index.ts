@@ -16,6 +16,9 @@ import {
 } from '../core/storage.js';
 import { productScanStateFromLookupResponse, trackEvent } from '../services/analytics.js';
 import { lookupByName } from '../services/openFoodFacts.js';
+import { initSentry } from '../services/sentry.js';
+
+initSentry('background');
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const CACHE_ALARM_NAME = 'safesnack-clear-expired-cache';

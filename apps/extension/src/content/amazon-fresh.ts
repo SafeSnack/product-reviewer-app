@@ -4,6 +4,7 @@ import { sendMessage } from '../core/messaging.js';
 import type { LookupResponse } from '../core/messaging.js';
 import { getSettings } from '../core/storage.js';
 import { trackEvent } from '../services/analytics.js';
+import { initSentry } from '../services/sentry.js';
 import { mountBadge, updateBadge } from './badge.js';
 import { openHelpSubmitModal, shouldOfferIngredientHelp } from './helpSubmitModal.js';
 import { mountPdpUi } from './highlighter.js';
@@ -14,6 +15,8 @@ import {
   findPdpIngredientsMountPoint,
   firstMatch,
 } from './selectors/amazon.js';
+
+initSentry('content');
 
 const pageDisposers: Array<() => void> = [];
 let spaHooksReady = false;
