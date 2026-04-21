@@ -43,3 +43,6 @@ dist/
 coverage/
 pnpm-debug.log*
 *.tsbuildinfo
+
+# Local beta distribution (rebuild with `pnpm beta:zip`)
+safesnack-beta-v*.zip
