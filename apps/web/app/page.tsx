@@ -2,6 +2,8 @@ import { ChevronDown, HeartHandshake, Lock, ShieldAlert, Sparkles } from 'lucide
 import Image from 'next/image';
 import Link from 'next/link';
 
+import { EmailCaptureForm } from './components/EmailCaptureForm';
+
 const GITHUB_URL = process.env.NEXT_PUBLIC_GITHUB_URL;
 
 const faqItems: { q: string; a: string }[] = [
@@ -96,6 +98,7 @@ export default function HomePage() {
               <p className="mt-6 text-sm font-medium text-stone-500">
                 Works on Amazon Fresh today. Instacart and Walmart coming soon.
               </p>
+              <EmailCaptureForm variant="hero" />
             </div>
             <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
               <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg ring-1 ring-stone-900/5">

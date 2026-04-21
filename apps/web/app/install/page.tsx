@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 
-import { OpeningSoonForm } from './opening-soon-form';
+import { EmailCaptureForm } from '../components/EmailCaptureForm';
 
 export const metadata: Metadata = {
   title: 'Install',
@@ -25,7 +25,7 @@ export default function InstallPage() {
         SafeSnack is not yet listed on the Chrome Web Store. Leave your email and we will follow up
         when the listing is live.
       </p>
-      <OpeningSoonForm />
+      <EmailCaptureForm variant="install" />
     </div>
   );
 }
