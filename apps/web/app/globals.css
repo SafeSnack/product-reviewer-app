@@ -11,3 +11,11 @@ html {
     scroll-behavior: auto;
   }
 }
+
+/* FAQ `<details>`: hide default marker for consistent layout */
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
