@@ -7,7 +7,6 @@ import {
   type Message,
   type SettingsChanged,
 } from '../core/messaging.js';
-import { recordProductScanned } from '../core/sessionScans.js';
 import {
   clearExpiredCache,
   getCached,
@@ -15,6 +14,7 @@ import {
   LOCAL_SETTINGS_STORAGE_KEY,
   setCached,
 } from '../core/storage.js';
+import { productScanStateFromLookupResponse, trackEvent } from '../services/analytics.js';
 import { lookupByName } from '../services/openFoodFacts.js';
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -122,7 +122,10 @@ async function handleLookupProduct(req: LookupRequest): Promise<LookupResponse> 
     inflight.set(key, pending);
   }
   const response = await pending;
-  void recordProductScanned(req.productKey);
+  void trackEvent('product_scanned', {
+    productKey: req.productKey,
+    state: productScanStateFromLookupResponse(response),
+  });
   return response;
 }
 
@@ -162,6 +165,9 @@ function registerInstallAndLifecycle(): void {
 
   chrome.runtime.onInstalled.addListener((details) => {
     ensureDailyCacheAlarm();
+    if (details.reason === 'install') {
+      void trackEvent('extension_installed');
+    }
     if (details.reason === 'install' && chrome.tabs?.create && chrome.runtime?.getURL) {
       try {
         void chrome.tabs.create({ url: chrome.runtime.getURL(ONBOARDING_URL) });

@@ -2,6 +2,7 @@ import type { AllergenKey, BadgeState, DetectionResult } from '@safesnack/shared
 import { sendMessage } from '../core/messaging.js';
 import type { LookupResponse } from '../core/messaging.js';
 import { getSettings } from '../core/storage.js';
+import { trackEvent } from '../services/analytics.js';
 import { mountBadge, updateBadge } from './badge.js';
 import { openHelpSubmitModal, shouldOfferIngredientHelp } from './helpSubmitModal.js';
 import { mountPdpUi } from './highlighter.js';
@@ -186,6 +187,7 @@ async function startPdpFlow(): Promise<void> {
   if (!asin || !ingredients?.trim()) {
     return;
   }
+  void trackEvent('pdp_viewed');
   const productKey = `amazon:${asin}`;
   try {
     const res = await sendMessage<LookupResponse>({

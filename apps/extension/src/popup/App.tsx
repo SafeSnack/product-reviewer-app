@@ -65,7 +65,9 @@ export function App() {
   const bootstrap = usePopupStore((s) => s.bootstrap);
   const dispose = usePopupStore((s) => s.dispose);
   const settings = usePopupStore((s) => s.settings);
-  const scannedToday = usePopupStore((s) => s.scannedToday);
+  const scansToday = usePopupStore((s) => s.scansToday);
+  const unsafeShown = usePopupStore((s) => s.unsafeShown);
+  const submissionsThisSession = usePopupStore((s) => s.submissionsThisSession);
   const helpedCount = usePopupStore((s) => s.helpedCount);
   const allergenSectionOpen = usePopupStore((s) => s.allergenSectionOpen);
   const setAllergenSectionOpen = usePopupStore((s) => s.setAllergenSectionOpen);
@@ -189,8 +191,14 @@ export function App() {
 
         <section className="mt-4 space-y-2 text-sm text-slate-700" aria-label="Activity">
           <p>
-            <span className="font-medium text-slate-900">Products scanned today:</span>{' '}
-            {scannedToday}
+            <span className="font-medium text-slate-900">Products scanned today:</span> {scansToday}
+          </p>
+          <p>
+            <span className="font-medium text-slate-900">Unsafe results shown:</span> {unsafeShown}
+          </p>
+          <p>
+            <span className="font-medium text-slate-900">Submissions this session:</span>{' '}
+            {submissionsThisSession}
           </p>
           <p>
             <span className="font-medium text-slate-900">Products submitted:</span> {helpedCount}

@@ -61,6 +61,7 @@ function mergeLocalSettings(raw: unknown): LocalSettings {
     installedAt: typeof r.installedAt === 'string' ? r.installedAt : d.installedAt,
     onboardingCompleted:
       typeof r.onboardingCompleted === 'boolean' ? r.onboardingCompleted : d.onboardingCompleted,
+    analyticsOptIn: typeof r.analyticsOptIn === 'boolean' ? r.analyticsOptIn : d.analyticsOptIn,
   };
 }
 

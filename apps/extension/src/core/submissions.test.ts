@@ -8,6 +8,11 @@ describe('submissions', () => {
       sync: {
         get: vi.fn(async () => ({})),
       },
+      session: {
+        get: vi.fn(async () => ({})),
+        set: vi.fn(async () => {}),
+        remove: vi.fn(async () => {}),
+      },
       local: {
         get: vi.fn(async (keys?: string | string[]) => {
           if (typeof keys === 'string') {

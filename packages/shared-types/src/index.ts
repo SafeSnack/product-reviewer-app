@@ -61,6 +61,8 @@ export type LocalSettings = {
   };
   installedAt: string;
   onboardingCompleted: boolean;
+  /** v2 remote analytics (PostHog); MVP default false — never send without explicit opt-in + wiring. */
+  analyticsOptIn: boolean;
 };
 
 export type CachedIngredient = {
@@ -83,4 +85,5 @@ export const DEFAULT_SETTINGS = (): LocalSettings => ({
   },
   installedAt: new Date().toISOString(),
   onboardingCompleted: false,
+  analyticsOptIn: false,
 });

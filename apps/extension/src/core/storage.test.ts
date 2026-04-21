@@ -113,6 +113,7 @@ describe('storage', () => {
     expect(s.version).toBe(1);
     expect(s.allergens).toEqual([]);
     expect(s.onboardingCompleted).toBe(false);
+    expect(s.analyticsOptIn).toBe(false);
     expect(s.uiPreferences.badgeStyle).toBe('minimal');
   });
 

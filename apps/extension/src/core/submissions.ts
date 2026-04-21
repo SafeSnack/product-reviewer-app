@@ -1,5 +1,6 @@
 import { detectAllergens } from '@safesnack/allergen-engine';
 import type { CachedIngredient } from '@safesnack/shared-types';
+import { trackEvent } from '../services/analytics.js';
 import { getSettings, setCached } from './storage.js';
 
 const SUBMISSIONS_KEY = 'submissions' as const;
@@ -99,6 +100,7 @@ export async function queueSubmission(
   const list = await readSubmissions();
   list.push(row);
   await writeSubmissions(list);
+  void trackEvent('submission_created');
 }
 
 export async function getQueuedSubmissions(): Promise<Submission[]> {

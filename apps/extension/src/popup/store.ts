@@ -2,8 +2,8 @@ import type { AllergenKey, LocalSettings } from '@safesnack/shared-types';
 import { ALL_ALLERGENS, DEFAULT_SETTINGS } from '@safesnack/shared-types';
 import { create } from 'zustand';
 import { getHelpedProductCount } from '../core/submissions.js';
-import { getScannedTodayCount, subscribeToScannedToday } from '../core/sessionScans.js';
 import { getSettings, saveSettings, subscribeToSettings } from '../core/storage.js';
+import { getSessionCounters, subscribeToSessionCounters } from '../services/analytics.js';
 
 const SUBMISSIONS_KEY = 'submissions' as const;
 
@@ -23,7 +23,9 @@ function clearSubs(): void {
 
 export type PopupStore = {
   settings: LocalSettings;
-  scannedToday: number;
+  scansToday: number;
+  unsafeShown: number;
+  submissionsThisSession: number;
   helpedCount: number;
   allergenSectionOpen: boolean;
   setAllergenSectionOpen: (open: boolean) => void;
@@ -34,7 +36,9 @@ export type PopupStore = {
 
 export const usePopupStore = create<PopupStore>((set, get) => ({
   settings: DEFAULT_SETTINGS(),
-  scannedToday: 0,
+  scansToday: 0,
+  unsafeShown: 0,
+  submissionsThisSession: 0,
   helpedCount: 0,
   allergenSectionOpen: false,
   setAllergenSectionOpen: (open) => set({ allergenSectionOpen: open }),
@@ -51,12 +55,18 @@ export const usePopupStore = create<PopupStore>((set, get) => ({
   },
   bootstrap: async () => {
     get().dispose();
-    const [settings, scannedToday, helpedCount] = await Promise.all([
+    const [settings, counters, helpedCount] = await Promise.all([
       getSettings(),
-      getScannedTodayCount(),
+      getSessionCounters(),
       getHelpedProductCount(),
     ]);
-    set({ settings, scannedToday, helpedCount });
+    set({
+      settings,
+      helpedCount,
+      scansToday: counters.scansToday,
+      unsafeShown: counters.unsafeShown,
+      submissionsThisSession: counters.submissionsThisSession,
+    });
 
     unsubs.push(
       subscribeToSettings((s) => {
@@ -64,8 +74,12 @@ export const usePopupStore = create<PopupStore>((set, get) => ({
       }),
     );
     unsubs.push(
-      subscribeToScannedToday((n) => {
-        set({ scannedToday: n });
+      subscribeToSessionCounters((c) => {
+        set({
+          scansToday: c.scansToday,
+          unsafeShown: c.unsafeShown,
+          submissionsThisSession: c.submissionsThisSession,
+        });
       }),
     );
     if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {

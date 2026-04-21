@@ -7,8 +7,8 @@ const mocks = vi.hoisted(() => ({
   getSettings: vi.fn(),
   saveSettings: vi.fn(),
   subscribeToSettings: vi.fn(),
-  getScannedTodayCount: vi.fn(),
-  subscribeToScannedToday: vi.fn(),
+  getSessionCounters: vi.fn(),
+  subscribeToSessionCounters: vi.fn(),
   getHelpedProductCount: vi.fn(),
 }));
 
@@ -18,9 +18,9 @@ vi.mock('../core/storage.js', () => ({
   subscribeToSettings: mocks.subscribeToSettings,
 }));
 
-vi.mock('../core/sessionScans.js', () => ({
-  getScannedTodayCount: mocks.getScannedTodayCount,
-  subscribeToScannedToday: mocks.subscribeToScannedToday,
+vi.mock('../services/analytics.js', () => ({
+  getSessionCounters: mocks.getSessionCounters,
+  subscribeToSessionCounters: mocks.subscribeToSessionCounters,
 }));
 
 vi.mock('../core/submissions.js', () => ({
@@ -33,26 +33,32 @@ describe('popup store', () => {
     mocks.getSettings.mockResolvedValue(DEFAULT_SETTINGS());
     mocks.saveSettings.mockResolvedValue(undefined);
     mocks.subscribeToSettings.mockReturnValue(() => {});
-    mocks.getScannedTodayCount.mockResolvedValue(3);
-    mocks.subscribeToScannedToday.mockReturnValue(() => {});
-    mocks.getHelpedProductCount.mockResolvedValue(2);
+    mocks.getSessionCounters.mockResolvedValue({
+      scansToday: 3,
+      unsafeShown: 2,
+      submissionsThisSession: 1,
+    });
+    mocks.subscribeToSessionCounters.mockReturnValue(() => {});
+    mocks.getHelpedProductCount.mockResolvedValue(4);
   });
 
   afterEach(() => {
     usePopupStore.getState().dispose();
   });
 
-  it('bootstrap hydrates counts and wires settings subscription', async () => {
+  it('bootstrap hydrates counters and wires settings subscription', async () => {
     await act(async () => {
       await usePopupStore.getState().bootstrap();
     });
     expect(mocks.getSettings).toHaveBeenCalled();
-    expect(mocks.getScannedTodayCount).toHaveBeenCalled();
+    expect(mocks.getSessionCounters).toHaveBeenCalled();
     expect(mocks.getHelpedProductCount).toHaveBeenCalled();
     expect(mocks.subscribeToSettings).toHaveBeenCalled();
-    expect(mocks.subscribeToScannedToday).toHaveBeenCalled();
-    expect(usePopupStore.getState().scannedToday).toBe(3);
-    expect(usePopupStore.getState().helpedCount).toBe(2);
+    expect(mocks.subscribeToSessionCounters).toHaveBeenCalled();
+    expect(usePopupStore.getState().scansToday).toBe(3);
+    expect(usePopupStore.getState().unsafeShown).toBe(2);
+    expect(usePopupStore.getState().submissionsThisSession).toBe(1);
+    expect(usePopupStore.getState().helpedCount).toBe(4);
   });
 
   it('toggleAllergen writes merged allergen list via saveSettings', async () => {

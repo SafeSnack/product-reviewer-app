@@ -10,6 +10,7 @@ import {
   useState,
 } from 'react';
 import { getSettings, saveSettings } from '../core/storage.js';
+import { trackEvent } from '../services/analytics.js';
 
 const AMZ_FRESH_URL = 'https://www.amazon.com/alm/storefront?almBrandId=QW1hem9uIEZyZXNo' as const;
 const LANDING_URL = 'https://safesnack.co' as const;
@@ -115,6 +116,7 @@ export function Onboarding() {
     }
     const allergens = orderedSelectedKeys(selected);
     await saveSettings({ allergens, onboardingCompleted: true });
+    void trackEvent('onboarding_completed', { allergenCount: allergens.length });
     setStep(3);
   }, [selected]);
 
