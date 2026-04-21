@@ -7,6 +7,7 @@ import {
   type Message,
   type SettingsChanged,
 } from '../core/messaging.js';
+import { recordProductScanned } from '../core/sessionScans.js';
 import {
   clearExpiredCache,
   getCached,
@@ -120,7 +121,9 @@ async function handleLookupProduct(req: LookupRequest): Promise<LookupResponse> 
     });
     inflight.set(key, pending);
   }
-  return await pending;
+  const response = await pending;
+  void recordProductScanned(req.productKey);
+  return response;
 }
 
 async function broadcastSettingsChanged(settings: LocalSettings): Promise<void> {
