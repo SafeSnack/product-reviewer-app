@@ -1,5 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import '../popup/styles.css';
 import { Onboarding } from './Onboarding.js';
 
 const el = document.getElementById('root');
